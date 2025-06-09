@@ -34,23 +34,25 @@ def tsloc(directory=None, depth=0, root=False):
     except PermissionError:
         return tree
 
-    # alphabetic, directories first
+    """ list items in alphabetic order with directories first """
     entries.sort(key=lambda e: e.name)
     entries.sort(key=lambda e: (not e.is_dir(), e.name))
 
     for entry in entries:
-
         if entry.is_dir():
             node.name = entry.name
             node.fd = "directory"
 
+            """ temporary dir listing, will be written once everything under this is processed. """
             print(Style.RESET_ALL + f"{node.name}")
 
+            """ recursively call the tree under node """
             subnode = tsloc(entry.path, depth + 1, root=False)
             node.files.append(subnode.name)
             node.lines += subnode.lines
             node.nodes.append(subnode)
 
+            """ styling of the output to stdout """
             name = entry.name
             name = "  " * depth + name
             name = f"{name:<{24}}"
@@ -62,7 +64,11 @@ def tsloc(directory=None, depth=0, root=False):
             exts_clean.sort(key=lambda x: subnode.exts.count(x), reverse=True)
             exts = ", ".join(f"{subnode.exts.count(a)}*{a}" for a in exts_clean)
 
-            # calculate how many lines we need to go back to parent directory
+            """
+            calculate how many lines we need to go back to parent directory.
+            this is required for us to use ANSI codes for erasing and writing
+            the metadata of the file again.
+            """
             def recursive(node):
                 total = 0
                 stack = [node]
@@ -79,9 +85,13 @@ def tsloc(directory=None, depth=0, root=False):
 
             con = Style.RESET_ALL + f"{name} {files} " + Fore.YELLOW + f"{lines} " + Fore.GREEN + f"{exts}"
 
+            """ ANSI: moves cursor up n lines """
             sys.stdout.write(f"\x1b[{n}A")
 
-            # cut length to 1 line from too many file extensions
+            """
+            cut length to 1 line from too many file extensions.
+            the idea is to create oneline per item and keep it as simple as possible.
+            """
             style = Style.RESET_ALL + Fore.YELLOW + Fore.GREEN
             con_len = len(con) - len(style)
             width = os.get_terminal_size().columns
@@ -91,7 +101,9 @@ def tsloc(directory=None, depth=0, root=False):
                     cut_pos = con.rfind(",", 0, cut_pos)
                 con = con[:len(style)+cut_pos] + "..."
 
+            """ ANSI: erase entine line """
             sys.stdout.write(f"\x1b[2K{con}\r")
+            """ ANSI moves cursor down n lines """
             sys.stdout.write(f"\x1b[{n}B")
             sys.stdout.flush()
         else:
@@ -113,21 +125,22 @@ def tsloc(directory=None, depth=0, root=False):
                 if args.files:
                     name = entry.name
                     name = "  " * depth + name
-                    name = f"{name:<{35}}"
+                    name = f"{name:<{35}}" # TODO how to get offset in better way, relies on dir stdout format
                     lines = subnode.lines
                     lines = Fore.YELLOW + f"lines {lines:<6}"
                     print(Style.RESET_ALL + f"{name} {lines}")
             except Exception:
-                print("TODO") # TODO
+                print("TODO") # TODO, when does this throw?
 
     return node
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tree view with line counts.")
+    parser = argparse.ArgumentParser(description="Unix-like tree recursive directory listing with lines of code and file extensions.")
     parser.add_argument('directory', nargs='?', default='.', help='Root directory')
     parser.add_argument('--files', action='store_true', default=False, help='List files. Default is off.')
     parser.add_argument('--dotfiles', action='store_true', default=False, help='List dot files. Default is off.')
     parser.add_argument('--ignore-dir', nargs='+', help='List of directories to ignore')
     args = parser.parse_args()
+    # TODO depth parameter
     node = tsloc(directory=args.directory, depth=0, root=True)
 

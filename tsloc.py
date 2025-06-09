@@ -28,7 +28,7 @@ def tsloc(directory=None, depth=0, root=False):
         for e in os.scandir(directory):
             if e.name.startswith(".") and not args.dotfiles:
                 continue
-            if e.is_dir() and e.name in args.ignore_dir:
+            if e.is_dir() and args.ignore_dir is not None and e.name in args.ignore_dir:
                 continue
             entries.append(e)
     except PermissionError:

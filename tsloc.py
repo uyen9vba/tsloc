@@ -28,6 +28,8 @@ def tsloc(directory=None, depth=0, root=False):
         for e in os.scandir(directory):
             if e.name.startswith(".") and not args.dotfiles:
                 continue
+            if e.is_dir() and e.name in args.ignore_dir:
+                continue
             entries.append(e)
     except PermissionError:
         return tree
@@ -123,8 +125,9 @@ def tsloc(directory=None, depth=0, root=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Tree view with line counts.")
     parser.add_argument('directory', nargs='?', default='.', help='Root directory')
-    parser.add_argument('--files', action='store_true', default=False, help='List files')
-    parser.add_argument('--dotfiles', action='store_true', default=False, help='List files')
+    parser.add_argument('--files', action='store_true', default=False, help='List files. Default is off.')
+    parser.add_argument('--dotfiles', action='store_true', default=False, help='List dot files. Default is off.')
+    parser.add_argument('--ignore-dir', nargs='+', help='List of directories to ignore')
     args = parser.parse_args()
     node = tsloc(directory=args.directory, depth=0, root=True)
 

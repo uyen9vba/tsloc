@@ -1,5 +1,6 @@
 # tsloc
-Unix-like tree recursive directory listing with lines of code.
+Unix-like tree recursive directory listing with lines of code and file extensions.
+The main goal of the project is to list directories, lines of code, and file extensions as onelines with as much information as possible to get a quick overview of the project.
 
 ## Install
 ```
